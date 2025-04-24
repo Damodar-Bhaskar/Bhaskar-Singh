@@ -1,0 +1,274 @@
+// EDSA Assignment (Question 03)
+//DAMODAR KUMAR BHASKAR
+//ME24I1016
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define SIZE 6  //Maximum number of elemnets in queue and stack
+#define LEN 20  //maximum length of each string (each string has 20 charactors)
+
+// Part Delivery and Crane Assembly (Queue → Stack)
+
+// Queue 
+char queue[SIZE][LEN];
+int front = 0, rear = 0;
+
+void enqueue(char *item)
+{
+    if (rear < SIZE)
+    {     //checking if the queue is full or NOT
+        int i = 0;
+        while (item[i] != '\0') 
+        {
+            queue[rear][i] = item[i];
+            i++;
+        }
+        queue[rear][i] = '\0';
+        rear++;
+    }
+}
+
+char *dequeue() 
+{
+    if (front < rear) 
+    {
+        return queue[front++];
+    }
+    return NULL;
+}
+
+// Stack
+char stack[SIZE][LEN];
+int top = -1;
+
+void push(char *item)
+{
+    if (top < SIZE - 1)
+    {
+        top++;
+        int i = 0;
+        while (item[i] != '\0') 
+        {
+            stack[top][i] = item[i];
+            i++;
+        }
+        stack[top][i] = '\0';
+
+    }
+}
+
+char *pop()
+{
+    if (top >= 0)
+    {
+        return stack[top--];
+    }
+    return NULL;
+}
+
+// MAIN PART A
+void partA() 
+{
+    char *parts[] = {"Boom", "Counterweight", "Cable", "Hook", "Base", "Pulley"};
+
+    for (int i = 0; i < SIZE; i++)  enqueue(parts[i]);
+    while (front < rear) push(dequeue());
+
+    printf("Assembly Order (LIFO):\n");
+    char *part;
+    while ((part = pop()) != NULL)
+    {
+        printf("%s\n", part);
+    }
+    printf("why LIFO: \n since,all parts are transported via TRUCKS.we know that first part is kept in last and upcoming parts fallow last one;and last one is kept in front of lobby,that's why we use LIFO.\n ");
+}
+// Assembly Storage Unit (Fixed Array with Overflow)
+char storage[SIZE][LEN];
+int deploy_num = 0,storage_count = 0;
+
+void store_crane(char *crane)
+{
+    if (storage_count < SIZE) 
+    {
+        int i = 0;
+        while (crane[i] != '\0') 
+        {
+            storage[storage_count][i] = crane[i];
+            i++;
+        }
+        storage[storage_count][i] = '\0';
+        storage_count++;
+
+    }
+    else 
+    {
+        printf("Lobby full. Deploying oldest: %s\n", storage[deploy_num]);
+        int i = 0;
+        while (crane[i] != '\0') 
+        {
+            storage[deploy_num][i] = crane[i];
+            i++;
+        }
+        storage[deploy_num][i] = '\0';
+
+        deploy_num = (deploy_num + 1) % SIZE;
+    }
+}
+//Main part B
+void partB() 
+{
+    char *cranes[] = {"Crane1", "Crane2", "Crane3", "Crane4", "Crane5", "Crane6", "Crane7", "Crane8"};
+    for (int i = 0; i < 8; i++) store_crane(cranes[i]);
+
+    printf("Current Storage:\n");
+    for (int i = 0; i < SIZE; i++)
+    {
+        printf("%s\n", storage[i]);
+    }
+    printf("Reason for Deployment:\n Crane1 :- There is site demand urgency.\n Crane 2 :- There was faulty in pulley.\n");
+}
+
+
+// Singly linked list
+struct node {
+    char name[LEN];
+    struct node *next,*prev;
+};
+// Faulty Crane Tracker (Singly & Doubly Linked Lists)
+struct node *faulty_head = NULL;
+
+void insert_faulty(char *crane)
+{
+    struct node *newNode =(struct node*)malloc(sizeof(struct node));
+    strcpy(newNode->name, crane);
+    newNode->next = faulty_head;
+    faulty_head = newNode;
+}
+
+void delete_faulty(char *crane)
+{
+    struct node *temp = faulty_head, *prev = NULL;
+    while (temp) 
+    {
+        if (strcmp(temp->name, crane) == 0)
+        {
+            if (prev) prev->next = temp->next;
+            else faulty_head = temp->next;
+            free(temp);
+            return;
+        }
+        prev = temp;
+        temp = temp->next;
+    }
+}
+
+// Doubly linked list
+
+struct node *repaired_head = NULL, *repaired_tail = NULL;
+
+void insert_repaired(char *crane)
+{
+    struct node *newNode =(struct node*)malloc(sizeof(struct node));
+    strcpy(newNode->name, crane);
+    newNode->prev = repaired_tail;
+    newNode->next = NULL;
+    if (repaired_tail) repaired_tail->next = newNode;
+    else repaired_head = newNode;
+    repaired_tail = newNode;
+}
+
+void traverse_repaired_forward()
+{
+    struct node *temp = repaired_head;
+    while (temp)
+    {
+        printf("%s\n", temp->name);
+        temp = temp->next;
+    }
+}
+
+void traverse_repaired_backward()
+{
+    struct node *temp = repaired_tail;
+    while (temp)
+    {
+        printf("%s\n", temp->name);
+        temp = temp->prev;
+    }
+}
+//Main Part C
+void partC() 
+{
+    insert_faulty("Crane2");
+    insert_faulty("Crane5");
+    delete_faulty("Crane2");
+    insert_repaired("Crane2");
+
+    printf("Repaired Cranes (Forward):\n");
+    traverse_repaired_forward();
+    printf("Repaired Cranes (Backward):\n");
+    traverse_repaired_backward();
+    printf("Faulty And Fix: \n Crane2's cable frayed,replaced by bots\n Crane5's hook brocken,repairing is still going on.\n ");
+}
+//Priority Upgrades (Circular Linked List)
+struct node *circular_head = NULL;
+
+void insert_priority(char *crane) 
+{
+    struct node *newNode =(struct node*)malloc(sizeof(struct node));
+    strcpy(newNode->name, crane);
+    if (!circular_head) 
+    {
+        circular_head = newNode;
+        newNode->next = circular_head;
+    } else
+    {
+        struct node *temp = circular_head;
+        while (temp->next != circular_head) temp = temp->next;
+        temp->next = newNode;
+        newNode->next = circular_head;
+    }
+}
+
+void traverse_priority(int rounds)
+{
+    if (!circular_head) return;
+    struct node *temp = circular_head;
+    int count = 0;
+    printf("Priority Cranes (Traversed %d Rounds):\n", rounds);
+    do {
+        printf("%s\n", temp->name);
+        temp = temp->next;
+        count++;
+    } while (count < rounds * 2); // 2 cranes * rounds
+}
+//Main Part D
+void partD()
+{
+    insert_priority("Crane1");
+    insert_priority("Crane4");
+    traverse_priority(2);
+    printf("UPDATE:\n Crane1 recovered with its gear problem.\n Crane4 gets a magnetic grip\n");
+}
+//Main Function
+int main()
+{
+    printf("         -: DAMODAR KUMAR BHASKAR :-\n            BATCH 04 (ME24I1016)\n");
+    printf("\n\n          ====Assignement Quetion 03:====\n      >>> TOPIC: Autonomous Crane Fabrication Unit <<<\n\n");
+    printf("Designing an Autonomous Crane Fabrication Unit for assembling crane parts.\n");
+    printf("Objective: Simulation Crane assembly,storage and repair\n");
+    printf("\n\n   === Part A ===\n\n");
+    partA();
+
+    printf("\n\n   === Part B ===\n\n");
+    partB();
+
+    printf("\n\n   === Part C ===\n\n");
+    partC();
+
+    printf("\n\n   === Part D ===\n\n");
+    partD();
+
+    return 0;
+}
